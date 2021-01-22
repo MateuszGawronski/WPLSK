@@ -51,7 +51,7 @@ void    Sniffer::run(){
         Packet(packet_header,packet,&row);
 
         while(row.size() < 7){
-            row.append(new QStandardItem("Nieznane"));
+            row.append(new QStandardItem("Niezdefiniowane"));
         }
 
         u_char *newData = (u_char *)malloc(packet_header->len);
@@ -114,7 +114,7 @@ void    Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
         row.append(new QStandardItem(QString::number(++num)));
         Packet_IPv4(data_found.at(i)+14,&row);
         while(row.size() < 5){
-            row.append(new QStandardItem("Nieznane"));
+            row.append(new QStandardItem("Niezdefiniowane"));
         }
         ip = (struct ipv4*)(data_found.at(i)+ SIZE_ETHERNET);
         row.insert(4,new QStandardItem(QString::number(ntohs(ip->ip_len)+14)));
@@ -141,7 +141,7 @@ void    Sniffer::Fill_Find_Info_v6(QStandardItemModel *packetmodel){
         row.append(new QStandardItem(QString::number(++num)));
         Packet_IPv6(data_found.at(i)+14,&row);
         while(row.size() < 5){
-            row.append(new QStandardItem("Nieznane"));
+            row.append(new QStandardItem("Niezdefiniowane"));
         }
         ip = (struct ipv6*)(data_found.at(i)+ SIZE_ETHERNET);
         row.insert(4,new QStandardItem(QString::number(ntohs(ip->ip6_len)+14)));

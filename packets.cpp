@@ -1,13 +1,10 @@
 #include "packets.h"
 
-/* dissect/print packet*/
+
 void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStandardItem *> *row)
 {
-    /* declare pointers to packet headers */
-    const struct ethernet *ethernet;  /* The ethernet header [1] */
+    const struct ethernet *ethernet;
     row->append(new QStandardItem(QString(ctime((const time_t *)&header->ts.tv_sec))));
-
-    /* define ethernet header */
     ethernet = (struct ethernet*)(packet);
     switch(ntohs(ethernet->ether_type)){
     case IPV4:  Packet_IPv4((packet+SIZE_ETHERNET),row);break;
@@ -25,26 +22,21 @@ void Packet_IPv4(const u_char *packet,QList<QStandardItem *> *row){
      printf("   * błąd długości nagłówka IP: %u bajtów\n", size_ip);
      return;
     }
-    /* source and destination IP addresses */
     row->append(new QStandardItem(QString(inet_ntoa(ip->ip_src))));
     row->append(new QStandardItem(QString(inet_ntoa(ip->ip_dst))));
-    /* determine protocol */
+
     switch(ip->ip_p) {
     case IPPROTO_TCP:
-       //printf("   Protokół: TCP\n");
        Packet_TCP((packet+size_ip),row);
        break;
      case IPPROTO_UDP:
-       //printf("   Protokół: UDP\n");
        Packet_UDP((packet+size_ip),row);
        break;
      case IPPROTO_ICMP:
-       //printf("   Protokół: ICMP\n");
        Packet_ICMP((packet+size_ip),row);
        break;
      default:
-       //printf("   Protokół: nieznany\n");
-       row->append(new QStandardItem("Nieznany"));
+       row->append(new QStandardItem("Niezdefiniowany"));
        break;
     }
 }
@@ -52,30 +44,22 @@ void Packet_IPv6(const u_char *packet,QList<QStandardItem *> *row){
     const struct ipv6 *ip;
     ip = (struct ipv6 *)packet;
 
-    /* source and destination IPV6 addresses */
     char buffer[INET6_ADDRSTRLEN];
-    //printf("     Źródło:%s\n", inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer)));
     row->append(new QStandardItem(QString(inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer)))));
-    //printf("Cel:%s\n", inet_ntop(AF_INET6, ip->ip6_dst, buffer, sizeof(buffer)));
     row->append(new QStandardItem(QString(inet_ntop(AF_INET6, ip->ip6_dst, buffer, sizeof(buffer)))));
 
-    /* determine protocol */
     switch(ip->ip6_nh) {
     case IPPROTO_TCP:
-       //printf("   Protokół: TCP\n");
        Packet_TCP((packet+IPV6_HEADER_LENGTH),row);
        break;
      case IPPROTO_UDP:
-       //printf("   Protokół: UDP\n");
        Packet_UDP((packet+IPV6_HEADER_LENGTH),row);
        break;
      case IPPROTO_ICMP_IPV6:
-       //printf("   Protokół: ICMP\n");
        Packet_ICMP_IPV6((packet+IPV6_HEADER_LENGTH),row);
        break;
      default:
-       //printf("   Protokół: Nieznany\n");
-       row->append(new QStandardItem("Nieznany"));
+       row->append(new QStandardItem("Niezdefiniowany"));
        break;
     }
 }
@@ -111,7 +95,7 @@ void Packet_ARP(const u_char *packet,QList<QStandardItem *> *row){
         }
         break;
     }
-    default:info.append(QString("Nieznany"));
+    default:info.append(QString("Niezdefiniowany"));
     }
     row->append(new QStandardItem(QString(info)));
 }
@@ -176,9 +160,7 @@ void Packet_ICMP_IPV6(const u_char *packet,QList<QStandardItem *> *row){
     case ICMP_REQUEST_IPV6:row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));break;
     }
 }
-/* insert packet details into model */
 void Packet_Details(const u_char *packet, QStandardItemModel *details){
-    /* add root to details */
     QStandardItem *root = new QStandardItem(QString("Ethernet II"));
     details->appendRow(root);
 
@@ -291,7 +273,11 @@ void IPv4_Details(const u_char *packet,QStandardItemModel *details){
         ICMP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip, false);
         break;
     }
-    default:pro.append(QString("Nieznany"));
+    default:{
+        pro.append(QString("Niezdefiniowany"));
+        pro.append(QString::number(ntohs(ip->ip_p)));
+    }
+
     }
     snprintf(tmp7,sizeof(tmp7),"0x%04x",ntohs(ip->ip_sum));
     hc.append(tmp7);
@@ -351,7 +337,10 @@ void IPv6_Details(const u_char *packet,QStandardItemModel *details){
         ICMP_Details((packet+IPV6_HEADER_LENGTH),details,ntohs(ip->ip6_len), true);
         break;
     }
-    default:nh.append(QString("Nieznane"));
+    default:{
+        nh.append(QString("Niezdefiniowany"));
+        nh.append(QString::number(ntohs(ip->ip6_nh)));
+    }
     }
     hl.append(QString::number(ip->ip6_hl));
     char buffer[INET6_ADDRSTRLEN];
@@ -387,15 +376,18 @@ void ARP_Details(const u_char *packet,QStandardItemModel *details){
             tip("Docelowe IP:  ");
 
     if(ntohs(arp->arp_ht)==0x0001)ht.append(QString("Ethernet(1)"));
-    else ht.append(QString("Nieznane"));
+    else ht.append(QString("Niezdefiniowane"));
     if(ntohs(arp->arp_pt)==IPV4)pt.append(QString("IPV4(0x0800)"));
-    else pt.append(QString("Nieznane"));
+    else pt.append(QString("Niezdefiniowane"));
     hs.append(QString::number(arp->arp_htlen));
     ps.append(QString::number(arp->ptlen));
     switch(ntohs(arp->arp_opcode)){
     case ARP_REQ:o.append(QString("zapytanie(1)"));break;
     case ARP_REP:o.append(QString("odpowiedź(2)"));break;
-    default:o.append(QString("Nieznane"));
+    default:{
+        o.append(QString("Niezdefiniowane"));
+        o.append(QString::number(ntohs(arp->arp_opcode)));
+    }
     }
     int i;
     char tmp[4];

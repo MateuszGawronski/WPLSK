@@ -4,11 +4,11 @@
 #include <pcap.h>
 #include <QStandardItem>
 #include <QPlainTextEdit>
-#include <QDebug>
 
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 
+// Rozmiar pakietu oraz nagłówka Ethernet na podstawie RFC 1042
 #define     SNAP_LEN        1518 //maksymalny rozmiar pakietów w bajtach
 #define     SIZE_ETHERNET   14 // Rozmiar nagłówka Ethernet
 
@@ -18,11 +18,11 @@
 #define     IPV6        0x86dd
 
 
-/* nagłówek Ethernet */
+/* nagłówek Ethernet, na podstawie RFC 1042 */
 struct ethernet {
-    u_char ether_dmac[ETHER_ADDR_LEN];
-    u_char ether_smac[ETHER_ADDR_LEN];
-    u_short ether_type;
+    u_char ether_dmac[ETHER_ADDR_LEN]; /*  */
+    u_char ether_smac[ETHER_ADDR_LEN]; /*  */
+    u_short ether_type; /* */
 };
 
 /* Nagłówek IP, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 5.6.1, Protokół IPv4 */
@@ -31,7 +31,6 @@ struct ipv4 {
         u_char  ip_tos;                 /* usługi zróżnicowane / typ usługi */
         u_short ip_len;                 /* długość całkowita */
         u_short ip_id;                  /* identyfikacja */
-        //u_short ip_off;                 /* fragment offset field */
         #define IP_RF 0x8000            /* zarezerwowany bit, musi być zero, RFC 3514 evil bit, pakiety o wartości tego bitu równego jeden zawierają złe zamiary */
         #define IP_DF 0x4000            /* flaga nie fragmentuj */
         #define IP_MF 0x2000            /* flaga więcej fragmentów */
@@ -78,35 +77,34 @@ struct udp
     u_short udp_cs;                	/* suma kontrolna */
 };
 
-/* nagłówek ICMP,  */
+/* nagłówek ICMP, na podstawie RFC 792 */
 struct icmp
 {
-    u_char	icmp_t;
-#define ICMP_REPLY          0x00
-#define ICMP_REPLY_IPV6     0x81
-#define ICMP_DU             0x03
-#define ICMP_REQUEST        0x08
-#define ICMP_REQUEST_IPV6   0x80
+    u_char	icmp_t;             /* typ */
+#define ICMP_REPLY          0x00/* kod odpowiedzi dla ipv4 */
+#define ICMP_REPLY_IPV6     0x81/* kod odpowiedzi dla ipv6 */
+#define ICMP_DU             0x03/* kod Nieosiągalności miejsca przeznaczenia dla ipv4 */
+#define ICMP_REQUEST        0x08/* kod zapytania dla ipv4 */
+#define ICMP_REQUEST_IPV6   0x80/* kod zapytania dla ipv6 */
     u_char	icmp_c;             /* kod */
     u_short	icmp_cs;            /* suma kontrolna */
     u_short icmp_id;            /* Identyfikator */
     u_short icmp_sq;            /* Sekwencja */
-
 };
 
 
-/* ARP header */
+/* Nagłówek ARP, na podstawie RFC 826 */
 struct arp
 {
-    u_short arp_ht,arp_pt;          /*hardware type & protocol type*/
-    u_char	arp_htlen,ptlen;        /*hardware length & protocol length*/
+    u_short arp_ht,arp_pt;          /* rodzaj sprzętu (Ethernet/AMPRNet/etc.) i rodzaj protokołu */
+    u_char	arp_htlen,ptlen;        /* długość w bajtach i długość protokołu */
     u_short arp_opcode;             /* kod operacji */
-#define ARP_REQ 0x0001
-#define ARP_REP 0x0002
-    u_char	arp_sp[ETHER_ADDR_LEN]; /*source physics*/
-    char    arp_sip[4];             /*source ip */
-    u_char	arp_tp[ETHER_ADDR_LEN];	/*target physics*/
-    char    arp_tip[4];             /*target ip*/
+#define ARP_REQ 0x0001              /* kod zapytania */
+#define ARP_REP 0x0002              /* kod odpowiedzi */
+    u_char	arp_sp[ETHER_ADDR_LEN]; /* adres fizyczny nadawcy */
+    char    arp_sip[4];             /* adres protokołu nadawcy */
+    u_char	arp_tp[ETHER_ADDR_LEN];	/* adres fizyczny odbiorcy */
+    char    arp_tip[4];             /* adres protokołu odbiorcy */
 };
 
 /* Nagłówek IPv6, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 5.6.3, IPv6*/

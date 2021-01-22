@@ -33,6 +33,7 @@ private:
     std::vector<unsigned char *> data;
     std::vector<unsigned char *> data_found;
 
+    //definicja kolorów dla protokołów
 #define ARP_Color QColor(255, 100, 100)
 #define UDP_Color QColor(255, 150, 255)
 #define TCP_Color QColor(150, 255, 255)
