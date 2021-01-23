@@ -27,7 +27,7 @@ void Sniffer::Find_Packets(QString text_get, u_short find_option){
             const struct ipv6 *ip;
             ip = (struct ipv6*)(*i + sizeof(struct ethhdr));
             char buffer[INET6_ADDRSTRLEN];
-            if(find.toStdString() == inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer))){
+            if(find.toStdString() == inet_ntop(AF_INET6, ip->ip6_dst, buffer, sizeof(buffer))){
                 data_found.push_back(data[data_number]);
             }else{
                 if(find.toStdString() == inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer))){

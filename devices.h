@@ -12,11 +12,11 @@ class Devices
 public:
     Devices();
     ~Devices();
-    void Find_Devices();
+    void Find_Devices();    /* przeszukuje dostępne interfejsy sieciowe i dodaje do tablicy */
 
 public:
-    char **device_all;
-    int device_count;
+    char **device_all;      /* przechowuje listę dostępnych interfejsów sieciowych */
+    int device_count;       /* przechowuje liczbę dostępnych interfejsów sieciowych */
 };
 
 #endif // DEVICES_H

@@ -538,7 +538,13 @@ void UDP_Details(const u_char *packet,QStandardItemModel *details,int size){
     }
 }
 void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, bool ipv6_flag){
-    QStandardItem *root = new QStandardItem(QString("Internet Control Message Protocol (ICMP)"));
+
+    QString v("Internet Control Message Protocol ");
+    if(!ipv6_flag) v.append("(ICMP)");
+    else v.append("version 6 (ICMPv6)");
+
+    QStandardItem *root = new QStandardItem(v);
+
     details->appendRow(root);
 
     const struct icmp *icmp;
