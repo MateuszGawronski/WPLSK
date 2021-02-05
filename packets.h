@@ -4,8 +4,10 @@
 #include <pcap.h>
 #include <QStandardItem>
 #include <QPlainTextEdit>
+#include <QDebug>
 
 #include <net/ethernet.h>
+#include <arpa/inet.h>
 #include <netinet/ip.h>
 
 /* Rozmiar pakietu oraz nagłówka Ethernet na podstawie RFC 1042 */
@@ -111,10 +113,10 @@ struct ipv6 {
     uint32_t    ip6_vtcfl;          /* wersja, klasa ruchu, etykieta przepływu */
     uint16_t    ip6_len;			/* długość ładunku */
     uint8_t     ip6_nh;             /* następny nagłówek */
-#define IPPROTO_ICMP_IPV6   58      /* wartość następnego nagłówka dla ICMP IPv6, na podstawie RFC 8200 */
     uint8_t     ip6_hl;             /* limit przeskoków */
     char        ip6_src[16];		/* adres źródłowy */
     char        ip6_dst[16];		/* adres docelowy */
+#define IPPROTO_ICMP_IPV6   58      /* wartość następnego nagłówka dla ICMP IPv6, na podstawie RFC 8200 */
 #define IPV6_HEADER_LENGTH 	40
 #define IPV6_VERSION(ip6_vtclf) 	((ip6_vtclf & 0xf0000000) >> 28)
 #define IPV6_TC(ip6_vtclf) 	((ip6_vtclf & 0x0ff00000) >> 20)

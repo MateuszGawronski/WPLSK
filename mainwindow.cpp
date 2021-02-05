@@ -73,15 +73,19 @@ void MainWindow::on_btn_run_clicked(){
     device = q.data();
     std::string device_string(device);
 
-    sniffer = new Sniffer(packetModel,device_string);
+    if(sniffer==NULL) sniffer = new Sniffer(packetModel,device_string);
     sniffer->start();
     ui->btn_clear->setEnabled(true);
     ui->btn_find->setEnabled(true);
     ui->btn_stop->setEnabled(true);
+    ui->btn_run->setEnabled(false);
+    ui->comboBox->setEnabled(false);
 }
 
 void MainWindow::on_btn_stop_clicked(){
     sniffer->Stop();
+    ui->btn_stop->setEnabled(false);
+    ui->btn_run->setEnabled(true);
 }
 
 void MainWindow::on_packetTableView_doubleClicked(const QModelIndex &index){
@@ -92,6 +96,7 @@ void MainWindow::on_packetTableView_doubleClicked(const QModelIndex &index){
         size = packetModel->data(packetModel->index(index.row(), 5)).toInt();
         sniffer->Fill_Data(ui->packetDataview, dataindex-1, size);
         sniffer->Fill_Details(packetdetails,dataindex-1);
+        ui->packetDetails->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         break;
     case 2:
         dataindex = findModel->data(findModel->index(index.row(), 0)).toInt();
@@ -121,6 +126,8 @@ void MainWindow::on_btn_clear_clicked(){
     ui->btn_clear->setEnabled(false);
     ui->btn_find->setEnabled(false);
     ui->btn_stop->setEnabled(false);
+    ui->btn_run->setEnabled(true);
+    ui->comboBox->setEnabled(true);
 
     if(state == 2) MainWindow::on_btn_rtn_clicked();
 

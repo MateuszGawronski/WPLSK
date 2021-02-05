@@ -2,6 +2,7 @@
 #define SNIFFER_H
 
 #include <QThread>
+#include <limits>
 #include "packets.h"
 
 class Sniffer : public QThread{
@@ -21,6 +22,7 @@ public:
 private:
     void                run();                  /* funkcja uruchamiająca proces sniffera oraz dodająca przechwycone pakiety do tabeli */
     std::string 		device;                 /* zmienna przechowuje wybrany interfejs sieciowy z którego będzie korzystać sniffer */
+    bool                of_flag;                /* flaga sygnalizująca przepełnienie packetnum */
     bool                stop;                   /* zmienna odpowiada za stan pracy sniffera, stop == true zatrzymuje proces sniffera */
     int                 packetnum;              /* zmienna odpowiadająca za numerowanie pakietów */
     in_addr             find_info;              /* zmienna przechowująca wartość adresu nadawcy lub odbiorcy w przypadku wyszukiwania adresu IPv4 */
