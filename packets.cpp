@@ -19,6 +19,9 @@ void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStand
     default:
         qDebug() << "Ethertype:";
         qDebug() << QString::number(ntohs(ethernet->ether_type)); //-----------------------------------------------------------------------
+        while(row->size() < 7){
+            row->append(new QStandardItem("Niezdefiniowane"));
+        }
     }
     row->insert(5,new QStandardItem(QString::number(header->caplen)));
 }
@@ -42,7 +45,7 @@ void Packet_IPv4(const u_char *packet,QList<QStandardItem *> *row){
         Packet_UDP((packet+size_ip),row);
         break;
     case IPPROTO_ICMP:
-        Packet_ICMP((packet+size_ip),row);
+        Packet_ICMP((packet+size_ip),row, false);
         break;
     default:
         qDebug() << "IPv4:";
@@ -66,7 +69,7 @@ void Packet_IPv6(const u_char *packet,QList<QStandardItem *> *row){
         Packet_UDP((packet+IPV6_HEADER_LENGTH),row);
         break;
     case IPPROTO_ICMP_IPV6:
-        Packet_ICMP_IPV6((packet+IPV6_HEADER_LENGTH),row);
+        Packet_ICMP((packet+IPV6_HEADER_LENGTH),row, true);
         break;
     default:
         qDebug() << "IPv4:";
@@ -155,41 +158,44 @@ void Packet_UDP(const u_char *packet,QList<QStandardItem *> *row){
     row->append(new QStandardItem(info));
 
 }
-void Packet_ICMP(const u_char *packet,QList<QStandardItem *> *row){
+void Packet_ICMP(const u_char *packet,QList<QStandardItem *> *row, bool ipv6_flag){
     const struct icmp *icmp;
     icmp = (struct icmp *)packet;
-    row->append(new QStandardItem(QString("ICMP")));
-    switch(icmp->icmp_t){
-    case ICMP_REPLY:
-        row->append(new QStandardItem(QString("(Echo (ping) odpowiedź)")));
-        break;
-    case ICMP_DU:
-        row->append(new QStandardItem(QString(" (Nieosiągalność miejsca przeznaczenia)")));
-        break;
-    case ICMP_REQUEST:
-        row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));
-        break;
-    default:
-        qDebug() << "ICMPv4:";
-        qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
+    if(!ipv6_flag){
+        row->append(new QStandardItem(QString("ICMP")));
+        switch(icmp->icmp_t){
+        case ICMP_REPLY:
+            row->append(new QStandardItem(QString("(Echo (ping) odpowiedź)")));
+            break;
+        case ICMP_DU:
+            row->append(new QStandardItem(QString("(Nieosiągalność miejsca przeznaczenia)")));
+            break;
+        case ICMP_REQUEST:
+            row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));
+            break;
+        default:
+            qDebug() << "ICMPv4:";
+            qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
+        }
+    }else{
+        row->append(new QStandardItem(QString("ICMP")));
+        switch(icmp->icmp_t){
+        case ICMPv6_REPLY:
+            row->append(new QStandardItem(QString("(Echo (ping) odpowiedź)")));
+            break;
+        case ICMPv6_REQUEST:
+            row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));
+            break;
+        case ICMPv6_NA:
+            row->append(new QStandardItem(QString("(Ogłoszenie adresu)")));
+            break;
+        default:
+            qDebug() << "ICMPv6:";
+            qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
+        }
     }
 }
-void Packet_ICMP_IPV6(const u_char *packet,QList<QStandardItem *> *row){
-    const struct icmp *icmp;
-    icmp = (struct icmp *)packet;
-    row->append(new QStandardItem(QString("ICMP")));
-    switch(icmp->icmp_t){
-    case ICMP_REPLY_IPV6:
-        row->append(new QStandardItem(QString("(Echo (ping) odpowiedź)")));
-        break;
-    case ICMP_REQUEST_IPV6:
-        row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));
-        break;
-    default:
-        qDebug() << "ICMPv6:";
-        qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
-    }
-}
+
 void Packet_Details(const u_char *packet, QStandardItemModel *details){
     QStandardItem *root = new QStandardItem(QString("Ethernet II"));
     details->appendRow(root);
@@ -586,25 +592,58 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
     QString t("Typ:  "),
             c("Kod:  "),
             cs("Suma kontrolna:  "),
-            id("Identyfikator: "),
-            sq("Sekwencja: ");
+            icmp_1(""),
+            icmp_2(""),
+            icmp_3("");
     t.append(QString::number(icmp->icmp_t));
     if(!ipv6_flag){
         switch(icmp->icmp_t){
         case ICMP_REPLY:
             t.append(" (Echo (ping) odpowiedź)");
+            icmp_1.append("Identyfikator: ");
+            icmp_1.append(QString::number(ICMP_ID(ntohl(icmp->icmp_rt))));
+            icmp_2.append("Sekwencja: ");
+            icmp_2.append(QString::number(ICMP_SQ(ntohl(icmp->icmp_rt))));
             break;
         case ICMP_REQUEST:
             t.append(" (Echo (ping) zapytanie)");
+            icmp_1.append("Identyfikator: ");
+            icmp_1.append(QString::number(ICMP_ID(ntohl(icmp->icmp_rt))));
+            icmp_2.append("Sekwencja: ");
+            icmp_2.append(QString::number(ICMP_SQ(ntohl(icmp->icmp_rt))));
+            break;
+        case ICMP_DU:
+            t.append(" Nieosiągalność miejsca przeznaczenia");
+            icmp_1.append("Długość: ");
+            icmp_1.append(QString::number(ICMP_L(ntohl(icmp->icmp_rt))));
+            icmp_2.append("MTU następnego skoku: ");
+            icmp_2.append(QString::number(ICMP_NH(ntohl(icmp->icmp_rt))));
             break;
         }
     }else{
         switch(icmp->icmp_t){
-        case ICMP_REPLY_IPV6:
+        case ICMPv6_REPLY:
             t.append(" (Echo (ping) odpowiedź)");
+            icmp_1.append("Identyfikator: ");
+            icmp_1.append(QString::number(ICMP_ID(ntohl(icmp->icmp_rt))));
+            icmp_2.append("Sekwencja: ");
+            icmp_2.append(QString::number(ICMP_SQ(ntohl(icmp->icmp_rt))));
             break;
-        case ICMP_REQUEST_IPV6:
+        case ICMPv6_REQUEST:
             t.append(" (Echo (ping) zapytanie)");
+            icmp_1.append("Identyfikator: ");
+            icmp_1.append(QString::number(ICMP_ID(ntohl(icmp->icmp_rt))));
+            icmp_2.append("Sekwencja: ");
+            icmp_2.append(QString::number(ICMP_SQ(ntohl(icmp->icmp_rt))));
+            break;
+        case ICMPv6_NA:
+            t.append(" (Ogłoszenie adresu (NA))");
+            icmp_1.append("R: ");
+            icmp_1.append(QString::number(ICMPV6_R(ntohl(icmp->icmp_rt))));
+            icmp_2.append("S: ");
+            icmp_2.append(QString::number(ICMPV6_S(ntohl(icmp->icmp_rt))));
+            icmp_3.append("O: ");
+            icmp_3.append(QString::number(ICMPV6_O(ntohl(icmp->icmp_rt))));
             break;
         }
     }
@@ -616,16 +655,9 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
     root->appendRow(new QStandardItem(t));
     root->appendRow(new QStandardItem(c));
     root->appendRow(new QStandardItem(cs));
-
-    if(ipv6_flag){
-        snprintf(tmp7,sizeof(tmp7),"0x%04x",ntohs(icmp->icmp_id));
-        id.append(tmp7);
-        sq.append(QString::number(ntohs(icmp->icmp_sq)));
-
-        root->appendRow(new QStandardItem(id));
-        root->appendRow(new QStandardItem(sq));
-    }
-
+    if(!icmp_1.isEmpty())root->appendRow(new QStandardItem(icmp_1));
+    if(!icmp_2.isEmpty())root->appendRow(new QStandardItem(icmp_2));
+    if(!icmp_3.isEmpty())root->appendRow(new QStandardItem(icmp_3));
 
     if(size>8){
         int len = size-8;

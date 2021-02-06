@@ -103,6 +103,7 @@ void MainWindow::on_packetTableView_doubleClicked(const QModelIndex &index){
         size = findModel->data(findModel->index(index.row(), 4)).toInt();
         sniffer->Fill_Find_Data(ui->packetDataview, dataindex-1, size);
         sniffer->Fill_Find_Details(packetdetails,dataindex-1);
+        ui->packetDetails->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         break;
     }
 }

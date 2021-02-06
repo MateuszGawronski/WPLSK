@@ -50,7 +50,7 @@ void    Sniffer::run(){
             int prev_packetnum = packetnum;
             QList<QStandardItem *>row;
             row.append(new QStandardItem(QString::number(packetnum++)));
-            Packet(packet_header,packet,&row);
+            Packet(packet_header, packet, &row);
 
             while(row.size() < 7){
                 row.append(new QStandardItem("Niezdefiniowane"));
