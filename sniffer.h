@@ -40,7 +40,7 @@ private:
 #define UDP_Color QColor(230, 50, 240)
 #define TCP_Color QColor(54, 200, 246)
 #define ICMP_Color QColor(255, 225, 25)
-#define LLC_Color QColor(227, 227, 227)
+#define LLC_Color QColor(127, 127, 127)
 };
 
 #endif // SNIFFER_H
