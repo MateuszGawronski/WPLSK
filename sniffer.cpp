@@ -25,6 +25,7 @@ void    Sniffer::run(){
         protocolColors.insert("UDP", UDP_Color);
         protocolColors.insert("TCP", TCP_Color);
         protocolColors.insert("ICMP", ICMP_Color);
+        protocolColors.insert("LLC", LLC_Color);
         int promiscuous = 0;
         int timeout = 1000;
         int snapshot_len = 66535;
@@ -106,7 +107,6 @@ void    Sniffer::Fill_Details(QStandardItemModel *packetdetails,int index){
     Packet_Details(data.at(index),packetdetails);
 }
 void    Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
-    protocolColors.insert("ARP", ARP_Color);
     protocolColors.insert("UDP", UDP_Color);
     protocolColors.insert("TCP", TCP_Color);
     protocolColors.insert("ICMP", ICMP_Color);
@@ -133,7 +133,6 @@ void    Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
     }
 }
 void    Sniffer::Fill_Find_Info_v6(QStandardItemModel *packetmodel){
-    protocolColors.insert("ARP", ARP_Color);
     protocolColors.insert("UDP", UDP_Color);
     protocolColors.insert("TCP", TCP_Color);
     protocolColors.insert("ICMP", ICMP_Color);

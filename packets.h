@@ -11,23 +11,22 @@
 #include <netinet/ip.h>
 
 /* Rozmiar pakietu oraz nagłówka Ethernet na podstawie RFC 1042 */
-#define     SNAP_LEN        1518    /*maksymalny rozmiar pakietów w bajtach */
-#define     SIZE_ETHERNET   14      /* Rozmiar nagłówka Ethernet */
+#define SNAP_LEN        1518    /*maksymalny rozmiar pakietów w bajtach */
+#define SIZE_ETHERNET   14      /* Rozmiar nagłówka Ethernet */
 
 /* kody EtherType, na podstawie https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml, RFC935 oraz RFC 7042 */
-#define     IPV4        0x0800
-#define     ARP         0x0806
-#define     IPV6        0x86dd
-#define     DDCMP       0x0006
+#define IPV4                0x0800
+#define ARP                 0x0806
+#define IPV6                0x86dd
+#define DDCMP               0x0006
+#define IEEE802_3_LENGTH    0x05dc
 
 /* nagłówek Ethernet, na podstawie RFC 1042 */
 struct ethernet{
-    u_char ether_dmac[ETHER_ADDR_LEN];  /* adres docelowy */
-    u_char ether_smac[ETHER_ADDR_LEN];  /* adres źródłowy */
+    u_char  ether_dmac[ETHER_ADDR_LEN];  /* adres docelowy */
+    u_char  ether_smac[ETHER_ADDR_LEN];  /* adres źródłowy */
     u_short ether_type;                 /* typ/długość */
 };
-
-
 
 /* Nagłówek IP, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 5.6.1, Protokół IPv4 */
 struct ipv4{
@@ -139,6 +138,31 @@ struct ipv6{
     #define IPV6_FL(ip6_vtclf)      (ip6_vtclf & 0x000fffff)
 };
 
+/* Nagłówek LLC, na podstawie https://www.cisco.com/c/en/us/support/docs/ibm-technologies/logical-link-control-llc/12247-45.html#topic3 */
+struct llc{
+    uint8_t llc_dsap;                                   /* usługa docelowa */
+    uint8_t llc_ssap;                                   /* usługa źródłowa */
+    uint8_t llc_cf;                                     /* pole sterujące */
+    #define LLC_ADDR(llc_sap)   ((llc_sap & 0xfc) >> 2) /* adres usługi */
+    #define LLC_IEEE(llc_sap)   ((llc_sap & 0x02) >> 1)
+    #define LLC_GAR(llc_sap)    (llc_sap & 0x01)        /* adres grupowy / odpowiedź */
+    #define LLCPROTO_XID        175                     /* wartość kodu operacji XID dla LLC */
+    #define LLC_HEADER_LENGTH   3                       /* długość nagłówka LLC */
+    #define LLC_IBF             129                     /* podstawowy identyfikator IEEE */
+    #define LLC_CLASS_I(llc)    (llc & 0x01)
+    #define LLC_CLASS_II(llc)   ((llc & 0x02) >> 1)
+    #define LLC_CLASS_III(llc)  ((llc & 0x04) >> 2)
+    #define LLC_CLASS_IV(llc)   (llc & 0x07)
+};
+
+/* Nagłówek XID dla LLC, na podstawie ISO 8802-2 IEEE 802.2, First Edition 1989-12-31 (Revision of IEEE Std 802.2-1985) */
+struct llc_xid{
+    uint8_t xid_id;     /* identyfikator formatu */
+    uint8_t xid_tc;     /* typ/klasa */
+    uint8_t xid_ws;     /* rozmiar okna */
+};
+
+
 void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStandardItem *>*row);    /* analizuje nagłówek ethernet przechwyconego pakietu, zwraca informacje na jego temat do obiektu packetTableView i przekazuje go dalej w zależności od wykrytego EtherType */
 void Packet_IPv4(const u_char *packet, QList<QStandardItem *> *row);                                /* analizuje nagłówek segmentu IPv4, zwraca informacje na jego temat obiektu packetTableView i przekazuje go dalej w zależności od wykrytego protokołu */
 void Packet_IPv6(const u_char *packet, QList<QStandardItem *> *row);                                /* analizuje nagłówek segmentu IPv6, zwraca informacje na jego temat obiektu packetTableView i przekazuje go dalej w zależności od wykrytego protokołu */
@@ -146,6 +170,8 @@ void Packet_ARP(const u_char *packet, QList<QStandardItem *> *row);             
 void Packet_TCP(const u_char *packet, QList<QStandardItem *> *row);                                 /* analizuje nagłówek segmentu TCP i zwraca informacje na jego temat obiektu packetTableView */
 void Packet_UDP(const u_char *packet, QList<QStandardItem *> *row);                                 /* analizuje nagłówek segmentu UDP i zwraca informacje na jego temat obiektu packetTableView */
 void Packet_ICMP(const u_char *packet, QList<QStandardItem *> *row, bool ipv6_flag);                /* analizuje nagłówek segmentu ICMP i zwraca informacje na jego temat obiektu packetTableView */
+void Packet_LLC(const u_char *packet, QList<QStandardItem *> *row);                                 /* analizuje nagłówek segmentu LLC i zwraca informacje na jego temat obiektu packetTableView */
+void Packet_XID(const u_char *packet, QList<QStandardItem *> *row);                                 /* analizuje nagłówek segmentu XID dla LLC i zwraca informacje na jego temat obiektu packetTableView */
 
 void Packet_Details(const u_char *packet, QStandardItemModel *details);                             /* analizuje wybrany pakiet z tabeli i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails. Analizuje nagłówek ethernet pakietu, zwraca informacje na jego temat do tabeli i przekazuje go dalej w zależności od wykrytego EtherType */
 void IPv4_Details(const u_char *packet, QStandardItemModel *details);                               /* analizuje nagłówek segmentu IPv4 i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails. Przekazuje go dalej w zależności od wykrytego protokołu */
@@ -154,5 +180,7 @@ void ARP_Details(const u_char *packet, QStandardItemModel *details);            
 void TCP_Details(const u_char *packet, QStandardItemModel *details, int size);                      /* analizuje nagłówek segmentu TCP i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails */
 void UDP_Details(const u_char *packet, QStandardItemModel *details, int size);                      /* analizuje nagłówek segmentu UDP i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails */
 void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, bool ipv6_flag);     /* analizuje nagłówek segmentu ICMP/ICMPv6 i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails */
+void LLC_Details(const u_char *packet, QStandardItemModel *details);                                /* analizuje nagłówek segmentu LLC i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails. Przekazuje go dalej w zależności od wykrytego protokołu */
+void XID_Details(const u_char *packet, QStandardItemModel *details);                                /* analizuje nagłówek segmentu LLC i wyświetla szeczegółowe informacje na jego temat w obiekcie packetDetails */
 
 #endif //PACKETS_H

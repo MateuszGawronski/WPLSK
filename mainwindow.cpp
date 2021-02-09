@@ -152,7 +152,7 @@ void MainWindow::on_btn_rtn_clicked(){
 }
 
 void MainWindow::on_btn_find_clicked(){
-    QString text = QInputDialog::getText(this, "Wyszukaj", "Wprowadź szukany IPv4, IPv6 lub protokół");
+    QString text = QInputDialog::getText(this, "Wyszukaj", "Wprowadź szukany IPv6, IPv4 lub protokół IPv4");
     if(text.isEmpty()) return;
     ipv6_flag = false;
 

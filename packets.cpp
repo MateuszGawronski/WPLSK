@@ -16,9 +16,10 @@ void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStand
     case IPV6:
         Packet_IPv6(packet+SIZE_ETHERNET,row);
         break;
+    case 0 ... IEEE802_3_LENGTH:
+        Packet_LLC(packet+SIZE_ETHERNET,row);
+        break;
     default:
-        qDebug() << "Ethertype:";
-        qDebug() << QString::number(ntohs(ethernet->ether_type)); //-----------------------------------------------------------------------
         while(row->size() < 7){
             row->append(new QStandardItem("Niezdefiniowane"));
         }
@@ -48,8 +49,6 @@ void Packet_IPv4(const u_char *packet,QList<QStandardItem *> *row){
         Packet_ICMP((packet+size_ip),row, false);
         break;
     default:
-        qDebug() << "IPv4:";
-        qDebug() << ip->ip_p; //----------------------------------------------------------------------
         row->append(new QStandardItem("Niezdefiniowany"));
     }
 }
@@ -72,8 +71,6 @@ void Packet_IPv6(const u_char *packet,QList<QStandardItem *> *row){
         Packet_ICMP((packet+IPV6_HEADER_LENGTH),row, true);
         break;
     default:
-        qDebug() << "IPv4:";
-        qDebug() << ip->ip6_nh; //----------------------------------------------------------------------
         row->append(new QStandardItem("Niezdefiniowany"));
     }
 }
@@ -89,7 +86,7 @@ void Packet_ARP(const u_char *packet,QList<QStandardItem *> *row){
 
     QString info;
     switch(ntohs(arp->arp_opcode)){
-    case ARP_REQ:{
+    case ARP_REQ:
         info.append(QString("Kto ma "));
         inet_ntop(AF_INET, &arp->arp_tip, buffer, INET_ADDRSTRLEN);
         info.append(buffer);
@@ -97,8 +94,7 @@ void Packet_ARP(const u_char *packet,QList<QStandardItem *> *row){
         inet_ntop(AF_INET, &arp->arp_sip, buffer, INET_ADDRSTRLEN);
         info.append(buffer);
         break;
-    }
-    case ARP_REP:{
+    case ARP_REP:
         inet_ntop(AF_INET, &arp->arp_tip, buffer, INET_ADDRSTRLEN);
         info.append(buffer);
         info.append(QString(" jest pod "));
@@ -108,12 +104,33 @@ void Packet_ARP(const u_char *packet,QList<QStandardItem *> *row){
             info.append(tmp);
         }
         break;
-    }
     default:
-        qDebug() << "ARP_opcode:";
-        qDebug() << QString::number(ntohs(arp->arp_opcode)); //----------------------------------------------------------------------
         info.append(QString("Niezdefiniowany"));
     }
+    row->append(new QStandardItem(QString(info)));
+}
+void Packet_LLC(const u_char *packet,QList<QStandardItem *> *row){
+    const struct llc *llc;
+    llc = (struct llc *)packet;
+
+    char tmp5[5];
+    snprintf(tmp5,sizeof(tmp5),"0x%02x",llc->llc_dsap);
+    row->append(new QStandardItem(tmp5));
+    snprintf(tmp5,sizeof(tmp5),"0x%02x",llc->llc_ssap);
+    row->append(new QStandardItem(tmp5));
+
+    row->append(new QStandardItem(QString("LLC")));
+
+    QString info;
+
+    switch(llc->llc_cf){
+    case LLCPROTO_XID ... (LLCPROTO_XID+1):
+        info.append(QString("XID"));
+        break;
+    default:
+        info.append(QString("Niezdefiniowane"));
+    }
+
     row->append(new QStandardItem(QString(info)));
 }
 void Packet_TCP(const u_char *packet,QList<QStandardItem *> *row){
@@ -173,9 +190,6 @@ void Packet_ICMP(const u_char *packet,QList<QStandardItem *> *row, bool ipv6_fla
         case ICMP_REQUEST:
             row->append(new QStandardItem(QString("(Echo (ping) zapytanie)")));
             break;
-        default:
-            qDebug() << "ICMPv4:";
-            qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
         }
     }else{
         row->append(new QStandardItem(QString("ICMP")));
@@ -189,9 +203,6 @@ void Packet_ICMP(const u_char *packet,QList<QStandardItem *> *row, bool ipv6_fla
         case ICMPv6_NA:
             row->append(new QStandardItem(QString("(Ogłoszenie adresu)")));
             break;
-        default:
-            qDebug() << "ICMPv6:";
-            qDebug() << icmp->icmp_t; //----------------------------------------------------------------------
         }
     }
 }
@@ -206,7 +217,7 @@ void Packet_Details(const u_char *packet, QStandardItemModel *details){
     int i;
     QString dh("Adres Docelowy:  "),
             sh("Adres Źródłowy:  "),
-            pro("Typ Ethernetu:  ");
+            pro("Typ Ethernetu/Długość:  ");
     char tmp[4];
     for(i=0;i<6;i++){
         snprintf(tmp,sizeof(tmp),((i==5)?"%02x":"%02x:"),*(ethernet->ether_dmac+i));
@@ -219,21 +230,26 @@ void Packet_Details(const u_char *packet, QStandardItemModel *details){
     root->appendRow(new QStandardItem(sh));
 
     switch(ntohs(ethernet->ether_type)){
-    case IPV4:{
+    case IPV4:
         pro.append(QString("IPV4(0x0800) "));
         IPv4_Details(packet+SIZE_ETHERNET,details);
         break;
-    }
-    case ARP:{
+    case ARP:
         pro.append(QString("ARP(0x0806)"));
         ARP_Details(packet+SIZE_ETHERNET,details);
         break;
-    }
-    case IPV6:{
+    case IPV6:
         pro.append(QString("IPV6(0x86dd)"));
         IPv6_Details(packet+SIZE_ETHERNET,details);
         break;
-    }
+    case 0 ... IEEE802_3_LENGTH:
+        pro.append("LLC(");
+        char tmp7[7];
+        snprintf(tmp7,sizeof(tmp7),"0x%04x",ntohs(ethernet->ether_type));
+        pro.append(tmp7);
+        pro.append(")");
+        LLC_Details(packet+SIZE_ETHERNET,details);
+        break;
     default:pro.append(QString("inny niż zdefiniowany: "));
         pro.append(QString::number(ntohs(ethernet->ether_type)));
     }
@@ -252,7 +268,7 @@ void IPv4_Details(const u_char *packet,QStandardItemModel *details){
             hl("Długość Nagłówka:  "),
             tos("Typ Usługi:  "),
             tl("Całkowita Długość:  "),
-            id("Identifikacja:  "),
+            id("Identyfikacja:  "),
             flag("Flagi:  "),
             of("Przesunięcie:  "),
             ttl("Czas Życia Pakietu:  "),
@@ -270,51 +286,51 @@ void IPv4_Details(const u_char *packet,QStandardItemModel *details){
     tl.append(QString::number(ntohs(ip->ip_len)));
     snprintf(tmp7,sizeof(tmp7),"0x%04x",ntohs(ip->ip_id));
     id.append(tmp7);
+
     switch(ntohs(ip->ip_off)&0xe000){
-    case IP_RF: {
+    case IP_RF:
         snprintf(tmp5,sizeof(tmp5),"0x%02x",IP_RF>>13);
         flag.append(tmp5);
         flag.append(QString("(Zarezerwowany bit)"));
         break;
-    }
-    case IP_DF: {
+    case IP_DF:
         snprintf(tmp5,sizeof(tmp5),"0x%02x",IP_DF>>13);
         flag.append(tmp5);
         flag.append(QString("(Flaga nie fragmentuj)"));
         break;
-    }
-    case IP_MF: {
+    case IP_MF:
         snprintf(tmp5,sizeof(tmp5),"0x%02x",IP_MF>>13);
         flag.append(tmp5);
         flag.append(QString("(Flaga więcej fragmentów)"));
         break;
-    }
     default:flag.append(QString("0x00"));
     }
+
     of.append(QString::number(ntohs(ip->ip_off)&IP_OFFMASK));
     ttl.append(QString::number(ip->ip_ttl));
+
     switch(ip->ip_p) {
-    case IPPROTO_TCP:{
+    case IPPROTO_TCP:
         pro.append(QString("TCP(6)"));
         TCP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip);
         break;
-    }
-    case IPPROTO_UDP:{
+    case IPPROTO_UDP:
         pro.append(QString("UDP(17)"));
         UDP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip);
         break;
-    }
-    case IPPROTO_ICMP:{
+    case IPPROTO_ICMP:
         pro.append(QString("ICMP(1)"));
         ICMP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip, false);
         break;
-    }
-    default:{
-        pro.append(QString("Niezdefiniowany"));
-        pro.append(QString::number(ntohs(ip->ip_p)));
+    case IPPROTO_IGMP:
+        pro.append(QString("IGMP(2)"));
+        //IGMP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip);
+        break;
+    default:
+        pro.append(QString("Niezdefiniowany "));
+        pro.append(QString::number(ip->ip_p));
     }
 
-    }
     snprintf(tmp7,sizeof(tmp7),"0x%04x",ntohs(ip->ip_sum));
     hc.append(tmp7);
     sip.append(QString(inet_ntoa(ip->ip_src)));
@@ -357,27 +373,25 @@ void IPv6_Details(const u_char *packet,QStandardItemModel *details){
     snprintf(tmp8,sizeof(tmp8),"0x%05x",IPV6_FL(ntohl(ip->ip6_vtcfl)));
     f.append(tmp8);
     pl.append(QString::number(ntohs(ip->ip6_len)));
-    switch(ip->ip6_nh) {
-    case IPPROTO_TCP:{
+
+    switch(ip->ip6_nh){
+    case IPPROTO_TCP:
         nh.append(QString("TCP(6)"));
         TCP_Details((packet+IPV6_HEADER_LENGTH),details,ntohs(ip->ip6_len));
         break;
-    }
-    case IPPROTO_UDP:{
+    case IPPROTO_UDP:
         nh.append(QString("UDP(17)"));
         UDP_Details((packet+IPV6_HEADER_LENGTH),details,ntohs(ip->ip6_len));
         break;
-    }
-    case IPPROTO_ICMP_IPV6:{
+    case IPPROTO_ICMP_IPV6:
         nh.append(QString("ICMP(58)"));
         ICMP_Details((packet+IPV6_HEADER_LENGTH),details,ntohs(ip->ip6_len), true);
         break;
-    }
-    default:{
-        nh.append(QString("Niezdefiniowany"));
+    default:
+        nh.append(QString("Niezdefiniowany "));
         nh.append(QString::number(ntohs(ip->ip6_nh)));
     }
-    }
+
     hl.append(QString::number(ip->ip6_hl));
     char buffer[INET6_ADDRSTRLEN];
     inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer));
@@ -417,6 +431,7 @@ void ARP_Details(const u_char *packet,QStandardItemModel *details){
     else pt.append(QString("Niezdefiniowane"));
     hs.append(QString::number(arp->arp_htlen));
     ps.append(QString::number(arp->ptlen));
+
     switch(ntohs(arp->arp_opcode)){
     case ARP_REQ:
         o.append(QString("zapytanie(1)"));
@@ -424,11 +439,11 @@ void ARP_Details(const u_char *packet,QStandardItemModel *details){
     case ARP_REP:
         o.append(QString("odpowiedź(2)"));
         break;
-    default:{
-        o.append(QString("Niezdefiniowane"));
+    default:
+        o.append(QString("Niezdefiniowany "));
         o.append(QString::number(ntohs(arp->arp_opcode)));
     }
-    }
+
     int i;
     char tmp[4];
     for(i=0;i<6;i++){
@@ -456,6 +471,102 @@ void ARP_Details(const u_char *packet,QStandardItemModel *details){
     root->appendRow(new QStandardItem(tip));
 
 }
+void LLC_Details(const u_char *packet,QStandardItemModel *details){
+    QStandardItem *root = new QStandardItem(QString("Logical Link Control (LLC)"));
+    details->appendRow(root);
+
+    const struct llc *llc;
+    llc = (struct llc *)packet;
+
+    QString da("Docelowowy punkt dostępu:  "),
+            di("Bit użytkownika:  "),
+            dg("Typ adresu:  "),
+            sa("Źródłowy punkt dostępu:  "),
+            si("Bit użytkownika:  "),
+            sr("Komenda/Odpowiedź:  "),
+            cf("Pole kontrolujące:  ");
+
+
+    da.append(QString::number(LLC_ADDR(llc->llc_dsap)));
+    di.append(QString::number(LLC_IEEE(llc->llc_dsap)));
+    if(LLC_GAR(llc->llc_dsap)) dg.append("1 (adres grupowy)");
+    else dg.append("0 (adres indywidualny)");
+    sa.append(QString::number(LLC_ADDR(llc->llc_ssap)));
+    si.append(QString::number(LLC_IEEE(llc->llc_ssap)));
+    sr.append(QString::number(LLC_GAR(llc->llc_ssap)));
+
+    switch(llc->llc_cf){
+    case LLCPROTO_XID ... (LLCPROTO_XID+1):
+        cf.append(QString("XID("));
+        cf.append(QString::number(llc->llc_cf));
+        cf.append(")");
+        XID_Details(packet+LLC_HEADER_LENGTH, details);
+        break;
+    default:
+        cf.append(QString("Niezdefiniowany "));
+        cf.append(QString::number(llc->llc_cf));
+    }
+
+    root->appendRow(new QStandardItem(da));
+    root->appendRow(new QStandardItem(di));
+    root->appendRow(new QStandardItem(dg));
+    root->appendRow(new QStandardItem(sa));
+    root->appendRow(new QStandardItem(si));
+    root->appendRow(new QStandardItem(sr));
+    root->appendRow(new QStandardItem(cf));
+
+}
+void XID_Details(const u_char *packet,QStandardItemModel *details){
+    QStandardItem *root = new QStandardItem(QString("Exchange Identification (XID)"));
+    details->appendRow(root);
+
+    const struct llc_xid *llc_xid;
+    llc_xid = (struct llc_xid *)packet;
+
+    QString id("Identyfikator ramki XID:  "),
+            tc("Typ/Klasa:  "),
+            ws("Rozmiar okna:  ");
+
+    if(llc_xid->xid_id == LLC_IBF)id.append("0x81");
+    else{
+        char tmp5[5];
+        snprintf(tmp5,sizeof(tmp5),"0x%02x",llc_xid->xid_id);
+        id.append(tmp5);
+    }
+
+    switch(llc_xid->xid_tc){
+    case 7:
+        tc.append("Typ 1, 2 oraz 3 LLC (Klasa IV LLC)");
+        break;
+    case 6:
+        tc.append("Typ 2 oraz 3 LLC");
+        break;
+    case 5:
+        tc.append("Typ 1 oraz 3 LLC (Klasa III LLC)");
+        break;
+    case 4:
+        tc.append("Typ 3 LLC");
+        break;
+    case 3:
+        tc.append("Typ 1 oraz 2 LLC (Klasa II LLC)");
+        break;
+    case 2:
+        tc.append("Typ 2 LLC");
+        break;
+    case 1:
+        tc.append("Typ 1 LLC (Klasa I LLC)");
+        break;
+    default:
+        tc.append("Niezdefiniowany ");
+        tc.append(QString::number(llc_xid->xid_tc));
+    }
+
+    ws.append(QString::number((llc_xid->xid_ws) >> 1));
+
+    root->appendRow(new QStandardItem(id));
+    root->appendRow(new QStandardItem(tc));
+    root->appendRow(new QStandardItem(ws));
+}
 void TCP_Details(const u_char *packet,QStandardItemModel *details,int size){
     QStandardItem *root = new QStandardItem(QString("Transmission Control Protocol (TCP)"));
     details->appendRow(root);
@@ -464,15 +575,15 @@ void TCP_Details(const u_char *packet,QStandardItemModel *details,int size){
     tcp = (struct tcp *)packet;
     int size_tcp = TH_OFF(tcp)*4;
 
-    QString sp("Port Źródłowy:  "),
-            dp("Port Docelowy:  "),
-            sn("Numer Sekwencyjny:  "),
-            an("Numer Potwierdzenia:  "),
-            hl("Długość Nagłówka:  "),
+    QString sp("Port źródłowy:  "),
+            dp("Port docelowy:  "),
+            sn("Numer sekwencyjny:  "),
+            an("Numer potwierdzenia:  "),
+            hl("Długość nagłówka:  "),
             flag("Flagi:  "),
-            ws("Szerokość Okna:  "),
+            ws("Szerokość okna:  "),
             cs("Suma kontrolna:  "),
-            up("Wskaźnik Priorytetu:  ");
+            up("Wskaźnik priorytetu:  ");
     sp.append(QString::number(ntohs(tcp->th_sport)));
     dp.append(QString::number(ntohs(tcp->th_dport)));
     sn.append(QString::number(ntohl(tcp->th_seq)));
@@ -538,8 +649,8 @@ void UDP_Details(const u_char *packet,QStandardItemModel *details,int size){
     const struct udp *udp;
     udp = (struct udp *)packet;
 
-    QString sp("Port Źródłowy:  "),
-            dp("Port Docelowy:  "),
+    QString sp("Port źródłowy:  "),
+            dp("Port docelowy:  "),
             len("Długość:  "),
             cs("Suma kontrolna:  ");
 
@@ -619,6 +730,9 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
             icmp_2.append("MTU następnego skoku: ");
             icmp_2.append(QString::number(ICMP_NH(ntohl(icmp->icmp_rt))));
             break;
+        default:
+            t.append("Niezdefiniowany ICMP ");
+            t.append(icmp->icmp_t);
         }
     }else{
         switch(icmp->icmp_t){
@@ -645,6 +759,8 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
             icmp_3.append("O: ");
             icmp_3.append(QString::number(ICMPV6_O(ntohl(icmp->icmp_rt))));
             break;
+            t.append("Niezdefiniowany ICMPv6 ");
+            t.append(icmp->icmp_t);
         }
     }
     c.append(QString::number(icmp->icmp_c));
