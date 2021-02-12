@@ -36,11 +36,11 @@ private:
     std::vector<unsigned char *> data_found;    /* wskaźnik na tablicę przechowującą wyszukane za pomocą metody Find_Packets pakiety */
 
     /* definicja kolorów dla protokołów */
-#define ARP_Color QColor(255, 50, 50)
-#define UDP_Color QColor(230, 50, 240)
-#define TCP_Color QColor(54, 200, 246)
-#define ICMP_Color QColor(255, 225, 25)
-#define LLC_Color QColor(127, 127, 127)
+#define ARP_Color QColor(255, 150, 150)
+#define UDP_Color QColor(230, 200, 240)
+#define TCP_Color QColor(154, 220, 255)
+#define ICMP_Color QColor(255, 225, 125)
+#define LLC_Color QColor(200, 200, 200)
 };
 
 #endif // SNIFFER_H
