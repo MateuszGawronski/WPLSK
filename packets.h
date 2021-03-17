@@ -4,28 +4,26 @@
 #include <pcap.h>
 #include <QStandardItem>
 #include <QPlainTextEdit>
-#include <QDebug>
 
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 
 /* Rozmiar pakietu oraz nagłówka Ethernet na podstawie RFC 1042 */
-#define SNAP_LEN        1518    /*maksymalny rozmiar pakietów w bajtach */
+#define SNAP_LEN        1518    /* maksymalny rozmiar pakietów w bajtach */
 #define SIZE_ETHERNET   14      /* Rozmiar nagłówka Ethernet */
 
-/* kody EtherType, na podstawie https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml, RFC935 oraz RFC 7042 */
+/* Kody EtherType, na podstawie https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml, RFC935 oraz RFC 7042 */
 #define IPV4                0x0800
 #define ARP                 0x0806
 #define IPV6                0x86dd
-#define DDCMP               0x0006
 #define IEEE802_3_LENGTH    0x05dc
 
-/* nagłówek Ethernet, na podstawie RFC 1042 */
+/* Nagłówek Ethernet, na podstawie RFC 1042 */
 struct ethernet{
-    u_char  ether_dmac[ETHER_ADDR_LEN];  /* adres docelowy */
-    u_char  ether_smac[ETHER_ADDR_LEN];  /* adres źródłowy */
-    u_short ether_type;                 /* typ/długość */
+    u_char  ether_dmac[ETHER_ADDR_LEN];/* adres docelowy */
+    u_char  ether_smac[ETHER_ADDR_LEN];/* adres źródłowy */
+    u_short ether_type;                /* typ/długość */
 };
 
 /* Nagłówek IP, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 5.6.1, Protokół IPv4 */
@@ -71,7 +69,7 @@ struct tcp{
     u_short     th_urp;                 /* wskaźnik pilności */
 };
 
-/* nagłówek UDP, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 6.4.1, Wprowadzenie do protokołu UDP */
+/* Nagłówek UDP, na podstawie Sieci komputerowe. Wydanie V - Andrew S. Tanenbaum, David J. Wetherall, Rozdział 6.4.1, Wprowadzenie do protokołu UDP */
 struct udp{
     u_short udp_sp;              	/* port źródłowy */
     u_short udp_dp;                	/* port docelowy */
@@ -79,7 +77,7 @@ struct udp{
     u_short udp_cs;                	/* suma kontrolna */
 };
 
-/* część nagłówka ICMP, na podstawie RFC 792, RFC 4443, RFC 4861 oraz RFC 4884 */
+/* Część nagłówka ICMP, na podstawie RFC 792, RFC 4443, RFC 4861 oraz RFC 4884 */
 struct icmp{
     u_char      icmp_t;             /* typ */
     u_char      icmp_c;             /* kod */

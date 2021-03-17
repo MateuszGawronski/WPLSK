@@ -2,7 +2,6 @@
 #define SNIFFER_H
 
 #include <QThread>
-#include <limits>
 #include "packets.h"
 
 class Sniffer : public QThread{
@@ -35,7 +34,7 @@ private:
     std::vector<unsigned char *> data;          /* wskaźnik na tablicę przechowującą przechwycone pakiety */
     std::vector<unsigned char *> data_found;    /* wskaźnik na tablicę przechowującą wyszukane za pomocą metody Find_Packets pakiety */
 
-    /* definicja kolorów dla protokołów */
+/* Definicje kolorów dla protokołów */
 #define ARP_Color QColor(255, 150, 150)
 #define UDP_Color QColor(230, 200, 240)
 #define TCP_Color QColor(154, 220, 255)
