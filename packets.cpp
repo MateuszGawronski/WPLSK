@@ -1,8 +1,7 @@
 #include "packets.h"
 
 
-void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStandardItem *> *row)
-{
+void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStandardItem *> *row){
     const struct ethernet *ethernet;
     row->append(new QStandardItem(QString(ctime((const time_t *)&header->ts.tv_sec))));
     ethernet = (struct ethernet*)(packet);
@@ -31,14 +30,14 @@ void Packet_IPv4(const u_char *packet,QList<QStandardItem *> *row){
     int size_ip;
     ip = (struct ipv4*)packet;
     size_ip = IP_HL(ip)*4;
-    if (size_ip < 20) {
+    if (size_ip < 20){
      printf("   * błąd długości nagłówka IP: %u bajtów\n", size_ip);
      return;
     }
     row->append(new QStandardItem(QString(inet_ntoa(ip->ip_src))));
     row->append(new QStandardItem(QString(inet_ntoa(ip->ip_dst))));
 
-    switch(ip->ip_p) {
+    switch(ip->ip_p){
     case IPPROTO_TCP:
         Packet_TCP((packet+size_ip),row);
         break;
@@ -60,7 +59,7 @@ void Packet_IPv6(const u_char *packet,QList<QStandardItem *> *row){
     row->append(new QStandardItem(QString(inet_ntop(AF_INET6, ip->ip6_src, buffer, sizeof(buffer)))));
     row->append(new QStandardItem(QString(inet_ntop(AF_INET6, ip->ip6_dst, buffer, sizeof(buffer)))));
 
-    switch(ip->ip6_nh) {
+    switch(ip->ip6_nh){
     case IPPROTO_TCP:
         Packet_TCP((packet+IPV6_HEADER_LENGTH),row);
         break;
@@ -309,7 +308,7 @@ void IPv4_Details(const u_char *packet,QStandardItemModel *details){
     of.append(QString::number(ntohs(ip->ip_off)&IP_OFFMASK));
     ttl.append(QString::number(ip->ip_ttl));
 
-    switch(ip->ip_p) {
+    switch(ip->ip_p){
     case IPPROTO_TCP:
         pro.append(QString("TCP(6)"));
         TCP_Details((packet+size_ip),details,ntohs(ip->ip_len)-size_ip);

@@ -1,14 +1,13 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :    
+MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
-{
+    ui(new Ui::MainWindow){
     ui->setupUi(this);
 
 
-    /* packetinfo window */
+    /* okno z pakietami */
     packetModel = new QStandardItemModel(0, 6, this);
     packetModel->setHorizontalHeaderItem(0, new QStandardItem("Nr"));
     packetModel->setHorizontalHeaderItem(1, new QStandardItem("Czas"));
@@ -34,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->packetTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->packetTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    /* packet details */
+    /* okno z informacjami */
     packetdetails = new QStandardItemModel(this);
     ui->packetDetails->setModel(packetdetails);
     ui->packetDetails->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -42,7 +41,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->packetDataview->setWordWrapMode(QTextOption::NoWrap);
 
-    /* get all devices */
     model_dev = new QStringListModel(this);
     device_list = new Devices();
     device_list->Find_Devices();
@@ -54,20 +52,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBox->setModel(model_dev);
     sniffer = NULL;
 
-
     state = 1;
     ui->btn_rtn->setEnabled(false);
     ui->btn_clear->setEnabled(false);
     ui->btn_find->setEnabled(false);
     ui->btn_stop->setEnabled(false);
 }
-
-
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow(){
     delete ui;
 }
-
 void MainWindow::on_btn_run_clicked(){
     QByteArray q = ui->comboBox->currentText().toLatin1();
     device = q.data();
@@ -87,7 +80,6 @@ void MainWindow::on_btn_stop_clicked(){
     ui->btn_stop->setEnabled(false);
     ui->btn_run->setEnabled(true);
 }
-
 void MainWindow::on_packetTableView_doubleClicked(const QModelIndex &index){
     int dataindex,size;
     switch(state){
@@ -107,7 +99,6 @@ void MainWindow::on_packetTableView_doubleClicked(const QModelIndex &index){
         break;
     }
 }
-
 void MainWindow::on_btn_clear_clicked(){
     sniffer->Stop();
     sniffer = NULL;
@@ -136,7 +127,6 @@ void MainWindow::on_btn_clear_clicked(){
     packetdetails->clear();
 
 }
-
 void MainWindow::on_btn_rtn_clicked(){
     ui->packetTableView->setModel(packetModel);
     ui->btn_rtn->setEnabled(false);
@@ -150,14 +140,13 @@ void MainWindow::on_btn_rtn_clicked(){
 
     state = 1;
 }
-
 void MainWindow::on_btn_find_clicked(){
     QString text = QInputDialog::getText(this, "Wyszukaj", "Wprowadź szukany IPv6, IPv4 lub protokół IPv4");
     if(text.isEmpty()) return;
     ipv6_flag = false;
 
     if(text.contains(".",Qt::CaseInsensitive)) find_option = 1;
-    else if (text.contains(":",Qt::CaseInsensitive)) {
+    else if (text.contains(":",Qt::CaseInsensitive)){
         find_option = 2;
         ipv6_flag = true;
     }
@@ -195,9 +184,7 @@ void MainWindow::on_btn_find_clicked(){
         }
     ui->btn_rtn->setEnabled(true);
     state = 2;
-
 }
-
 void MainWindow::on_btn_aboutQt_clicked(){
     QMessageBox::aboutQt(this,"about Qt");
 }

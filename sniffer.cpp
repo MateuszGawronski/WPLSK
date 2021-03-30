@@ -15,10 +15,10 @@ Sniffer::~Sniffer(){
     }
     data.clear();
 }
-void    Sniffer::Stop(void){
+void Sniffer::Stop(void){
     stop = true;
 }
-void    Sniffer::run(){
+void Sniffer::run(){
     if(!of_flag){
         stop = false;
         protocolColors.insert("ARP", ARP_Color);
@@ -81,7 +81,7 @@ void    Sniffer::run(){
         pcap_close(handle);
     }
 }
-void    Sniffer::Fill_Data(QPlainTextEdit *text,int index,int size){
+void Sniffer::Fill_Data(QPlainTextEdit *text,int index,int size){
     text->clear();
     QString add;
     char d[4],o[9];
@@ -102,11 +102,11 @@ void    Sniffer::Fill_Data(QPlainTextEdit *text,int index,int size){
 
     text->appendPlainText(add);
 }
-void    Sniffer::Fill_Details(QStandardItemModel *packetdetails,int index){
+void Sniffer::Fill_Details(QStandardItemModel *packetdetails,int index){
     packetdetails->clear();
     Packet_Details(data.at(index),packetdetails);
 }
-void    Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
+void Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
     protocolColors.insert("UDP", UDP_Color);
     protocolColors.insert("TCP", TCP_Color);
     protocolColors.insert("ICMP", ICMP_Color);
@@ -132,7 +132,7 @@ void    Sniffer::Fill_Find_Info_v4(QStandardItemModel *packetmodel){
         packetmodel->appendRow(row);
     }
 }
-void    Sniffer::Fill_Find_Info_v6(QStandardItemModel *packetmodel){
+void Sniffer::Fill_Find_Info_v6(QStandardItemModel *packetmodel){
     protocolColors.insert("UDP", UDP_Color);
     protocolColors.insert("TCP", TCP_Color);
     protocolColors.insert("ICMP", ICMP_Color);
@@ -158,7 +158,7 @@ void    Sniffer::Fill_Find_Info_v6(QStandardItemModel *packetmodel){
         packetmodel->appendRow(row);
     }
 }
-void    Sniffer::Fill_Find_Data(QPlainTextEdit *text,int index,int size){
+void Sniffer::Fill_Find_Data(QPlainTextEdit *text,int index,int size){
     text->clear();
     QString add;
     char d[4],o[9];
@@ -179,10 +179,10 @@ void    Sniffer::Fill_Find_Data(QPlainTextEdit *text,int index,int size){
 
     text->appendPlainText(add);
 }
-void    Sniffer::Fill_Find_Details(QStandardItemModel *packetdetails,int index){
+void Sniffer::Fill_Find_Details(QStandardItemModel *packetdetails,int index){
     packetdetails->clear();
     Packet_Details(data_found.at(index),packetdetails);
 }
-int     Sniffer::Find_Vec_Size(){
+int Sniffer::Find_Vec_Size(){
     return data_found.size();
 }

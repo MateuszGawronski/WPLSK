@@ -62,8 +62,8 @@ struct tcp{
     #define     TH_URG  0x020           /* służy do sygnalizowania że zawartość pola "wskaźnika pilności" jest istotna */
     #define     TH_ECE  0x040           /* służy do sygnalizowania odpowiedzi ECN-Echo */
     #define     TH_CWR  0x080           /* jest informacją że okno nadawcze zostało zredukowane */
-    #define     TH_NS   0x100           /* na podstawie RFC 7125 */
-    #define     TH_FLAGS        (TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG|TH_ECE|TH_CWR|TH_NS)
+    #define     TH_NS   0x100           /* na podstawie RFC 7125, experymentalna flaga, obecnie bit jest nie używany */
+    #define     TH_FLAGS        (TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG|TH_ECE|TH_CWR)
     uint16_t    th_win;                 /* rozmiar okna */
     u_short     th_sum;                 /* suma kontrolna */
     u_short     th_urp;                 /* wskaźnik pilności */
