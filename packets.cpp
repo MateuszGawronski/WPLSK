@@ -19,7 +19,7 @@ void Packet(const struct pcap_pkthdr *header, const u_char *packet, QList<QStand
         Packet_LLC(packet+SIZE_ETHERNET,row);
         break;
     default:
-        while(row->size() < 7){
+        while(row->size() < 6){
             row->append(new QStandardItem("Niezdefiniowane"));
         }
     }
