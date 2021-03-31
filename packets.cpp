@@ -730,8 +730,7 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
             icmp_2.append(QString::number(ICMP_NH(ntohl(icmp->icmp_rt))));
             break;
         default:
-            t.append("Niezdefiniowany ICMP ");
-            t.append(icmp->icmp_t);
+            t.append(" Niezdefiniowany ICMP ");
         }
     }else{
         switch(icmp->icmp_t){
@@ -758,8 +757,7 @@ void ICMP_Details(const u_char *packet, QStandardItemModel *details, int size, b
             icmp_3.append("O: ");
             icmp_3.append(QString::number(ICMPV6_O(ntohl(icmp->icmp_rt))));
             break;
-            t.append("Niezdefiniowany ICMPv6 ");
-            t.append(icmp->icmp_t);
+            t.append(" Niezdefiniowany ICMPv6 ");
         }
     }
     c.append(QString::number(icmp->icmp_c));
